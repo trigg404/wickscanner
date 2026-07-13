@@ -18,7 +18,7 @@
 const TELEGRAM_TOKEN   = process.env.TELEGRAM_TOKEN   || "YOUR_BOT_TOKEN";
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1501079802";
 
-const WICK_THRESHOLD_PCT = 0.5;      // wick must be >= this % of price
+const WICK_THRESHOLD_PCT = 5;      // wick must be >= this % of price
 const TOP_VOLATILE       = 60;     // per-exchange: only check the N most volatile coins
 const RUN_INTERVAL_MS    = 60000;  // scan every 1 minute
 const ALERT_COOLDOWN_MS  = 10 * 60 * 1000; // don't repeat same coin+exchange within 10 min
@@ -55,6 +55,7 @@ async function scanBinance() {
   try {
     const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
     const arr = await res.json();
+    if (!Array.isArray(arr)) { console.error("Binance: unexpected response", JSON.stringify(arr).slice(0,120)); return; }
     const usdt = arr.filter(t => t.symbol.endsWith("USDT"));
     // rank by 24h range %
     usdt.forEach(t => {
@@ -81,6 +82,7 @@ async function scanMexc() {
   try {
     const res = await fetch("https://api.mexc.com/api/v3/ticker/24hr");
     const arr = await res.json();
+    if (!Array.isArray(arr)) { console.error("MEXC: unexpected response", JSON.stringify(arr).slice(0,120)); return; }
     const usdt = arr.filter(t => t.symbol.endsWith("USDT"));
     usdt.forEach(t => {
       const hi = parseFloat(t.highPrice), lo = parseFloat(t.lowPrice);
@@ -106,6 +108,7 @@ async function scanGate() {
   try {
     const res = await fetch("https://api.gateio.ws/api/v4/spot/tickers");
     const arr = await res.json();
+    if (!Array.isArray(arr)) { console.error("Gate: unexpected response", JSON.stringify(arr).slice(0,120)); return; }
     const usdt = arr.filter(t => t.currency_pair.endsWith("_USDT"));
     usdt.forEach(t => {
       const hi = parseFloat(t.high_24h), lo = parseFloat(t.low_24h);
