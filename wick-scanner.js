@@ -18,7 +18,7 @@
 const TELEGRAM_TOKEN   = process.env.TELEGRAM_TOKEN   || "YOUR_BOT_TOKEN";
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1501079802";
 
-const WICK_THRESHOLD_PCT = 5;      // wick must be >= this % of price
+const WICK_THRESHOLD_PCT = 0.5;      // wick must be >= this % of price
 const TOP_VOLATILE       = 60;     // per-exchange: only check the N most volatile coins
 const RUN_INTERVAL_MS    = 60000;  // scan every 1 minute
 const ALERT_COOLDOWN_MS  = 10 * 60 * 1000; // don't repeat same coin+exchange within 10 min
