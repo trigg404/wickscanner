@@ -50,31 +50,33 @@ function wickInfo(o, h, l, c) {
   return { upperPct, lowerPct, price };
 }
 
-// ── BINANCE ──────────────────────────────────────────────────
-async function scanBinance() {
+// ── KUCOIN (replaces Binance — no geo-blocking on Railway) ──
+async function scanKucoin() {
   try {
-    const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
-    const arr = await res.json();
-    if (!Array.isArray(arr)) { console.error("Binance: unexpected response", JSON.stringify(arr).slice(0,120)); return; }
-    const usdt = arr.filter(t => t.symbol.endsWith("USDT"));
-    // rank by 24h range %
+    const res = await fetch("https://api.kucoin.com/api/v1/market/allTickers");
+    const j = await res.json();
+    const tickers = j.data?.ticker || [];
+    if (!Array.isArray(tickers)) { console.error("KuCoin: unexpected response"); return; }
+    const usdt = tickers.filter(t => t.symbol.endsWith("-USDT"));
     usdt.forEach(t => {
-      const hi = parseFloat(t.highPrice), lo = parseFloat(t.lowPrice);
+      const hi = parseFloat(t.high), lo = parseFloat(t.low);
       t._range = lo > 0 ? ((hi - lo) / lo) * 100 : 0;
     });
     const top = usdt.sort((a,b)=>b._range-a._range).slice(0, TOP_VOLATILE);
     for (const t of top) {
-      const sym = t.symbol;
+      const sym = t.symbol; // e.g. "BTC-USDT"
       try {
-        const k = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1m&limit=1`);
-        const kl = await k.json();
-        if (!kl[0]) continue;
-        const [ , o, h, l, c ] = kl[0].map(Number);
-        await checkWick("Binance", sym.replace("USDT",""), o, h, l, c);
+        const k = await fetch(`https://api.kucoin.com/api/v1/market/candles?type=1min&symbol=${sym}&limit=1`);
+        const kj = await k.json();
+        const row = kj.data && kj.data[0];
+        if (!row) continue;
+        // kucoin candle: [time, open, close, high, low, volume, turnover]
+        const o = Number(row[1]), c = Number(row[2]), h = Number(row[3]), l = Number(row[4]);
+        await checkWick("KuCoin", sym.replace("-USDT",""), o, h, l, c);
       } catch (_) {}
       await sleep(120);
     }
-  } catch (e) { console.error("Binance:", e.message); }
+  } catch (e) { console.error("KuCoin:", e.message); }
 }
 
 // ── MEXC (same API shape as Binance) ─────────────────────────
@@ -214,7 +216,7 @@ async function checkWick(exchange, symbol, o, h, l, c) {
 async function scanCycle() {
   const t = new Date().toISOString();
   console.log(`[${t}] wick scan starting...`);
-  await scanBinance();
+  await scanKucoin();
   await scanMexc();
   await scanGate();
   await scanOkx();
