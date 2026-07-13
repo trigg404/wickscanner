@@ -1,0 +1,13 @@
+{
+  "name": "wick-scanner",
+  "version": "1.0.0",
+  "description": "Multi-exchange 1m wick scanner",
+  "main": "wick-scanner.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node wick-scanner.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
